@@ -2,6 +2,10 @@
 
 Data and code for: Matsushita, D. "Tropical nights and insufficient rest from sleep: a nationwide panel study of 335 secondary medical care areas in Japan, 2018–2023" (submitted to *Environment International*).
 
+<p align="center"><img src="docs/images/map_tropical_nights_2023.png" width="600" alt="Map of Japan showing the number of tropical nights in July–September 2023 by secondary medical care area"></p>
+
+*Tropical nights (days with a daily minimum temperature of 25 °C or higher) in July–September 2023, population-weighted and land-use corrected, by secondary medical care area. Interactive map with all years, insufficient rest from sleep and the 2023 scenario: https://m138.github.io/japan-hotnight-sleep/ . The inset shows Okinawa Island. Map lines delineate study areas and do not necessarily depict accepted national boundaries. Made by `src/make_readme_map.py`.*
+
 ## Data (`data/`)
 
 | File | Content |
@@ -41,6 +45,7 @@ Python 3.13, pandas, NumPy, SciPy, statsmodels 0.15, geopandas, matplotlib.
 4. Validation: `aq_parse.py` (hourly temperature at air quality monitoring stations), `t10_cmp.py` (minimum of hourly values vs. daily minimum), `uhi_v5.py` (leave-one-prefecture-out validation).
 5. Models: `panel_v5.py`, `panel_v5b.py`, `v6.py`, `v6b.py`, `v6c.py` (fixed-effects models, sensitivity analyses, contribution of each year), `em_v7.py` (aggregated binomial model and 2023 scenario).
 6. Figures: `en_figs.py` (English Figures 1–4 and Supplementary Figure 1, in `figures/`), `graphical_abstract.py`; `figs.py`, `fig4_v7.py`, and `supp_map.py` are the earlier versions with Japanese labels.
+7. Maps for this repository: `make_readme_map.py` (the map above) and `make_webmap_data.py` (`docs/areas.geojson` for the interactive map in `docs/index.html`).
 
 The scripts were run in a working directory with input folders `jma/`, `hn/`, `dem/`, and `lu/`; paths at the top of each script may need to be changed. Population points are from https://github.com/m138/japan-night-road-noise.
 

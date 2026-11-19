@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}[hidden]{display:none!important}</style>
+<title>Japan Tropical Nights Map</title>
+<style>
+/* Layout: full-height map with a header bar, indicator chips and a side panel that drops below the map on phones */
+:root{
+  --bg:#f7f8fa; --panel:#ffffff; --fg:#14202e; --muted:#5b6675; --line:#d9dee5; --accent:#b9481f; --sea:#eef2f6; --stroke:rgba(255,255,255,.65);
+  --c0:#fbe3cf; --c1:#f7c29f; --c2:#ef9a6a; --c3:#de6f3d; --c4:#b9481f; --c5:#7d2a0e; --hl:#1f5fae;
+  --sans:"Noto Sans JP","Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;
+  --num:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141b;--panel:#161d27;--fg:#e6ebf1;--muted:#9aa6b4;--line:#2a3442;--accent:#f0a070;--sea:#121922;--stroke:rgba(15,20,27,.7);--hl:#7fb1ee;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f141b;--panel:#161d27;--fg:#e6ebf1;--muted:#9aa6b4;--line:#2a3442;--accent:#f0a070;--sea:#121922;--stroke:rgba(15,20,27,.7);--hl:#7fb1ee;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);display:flex;flex-direction:column}
+header{padding-block:12px 8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:6px 20px;align-items:baseline;border-bottom:1px solid var(--line);background:var(--panel)}
+h1{font-size:1.15rem;margin:0;font-weight:700;text-wrap:balance}
+header p{margin:0;color:var(--muted);font-size:.82rem}
+.controls{padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);border-bottom:1px solid var(--line)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.82rem;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.chip:focus-visible,#search:focus-visible,#reset:focus-visible,#year:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+.search{margin-left:auto;display:flex;gap:6px}
+#search{font:inherit;font-size:.85rem;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:15em;max-width:52vw}
+#reset{font:inherit;font-size:.82rem;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);cursor:pointer}
+main{flex:1;display:grid;grid-template-columns:1fr 300px;min-height:0}
+#mapwrap{position:relative;min-height:0;background:var(--sea);overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:default}
+canvas.dragging{cursor:grabbing}
+#tip{position:absolute;pointer-events:none;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:.8rem;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap}
+#legend{position:absolute;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.78rem}
+#legend b{display:block;font-weight:600;margin-bottom:5px;max-width:13em}
+#legend .row{display:flex;align-items:center;gap:7px;line-height:1.55;font-family:var(--num);font-size:.74rem}
+#legend i{width:22px;height:11px;display:inline-block;border-radius:2px}
+#status{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.9rem}
+aside{border-left:1px solid var(--line);background:var(--panel);padding:14px 16px;overflow:auto;font-size:.85rem;min-width:0}
+aside h2{font-size:1rem;margin:0 0 2px}
+aside .sub{color:var(--muted);font-size:.78rem;margin-bottom:10px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+td{padding:4px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-family:var(--num)}
+tr.on td{color:var(--accent);font-weight:600}
+.bar{height:5px;background:var(--line);border-radius:3px;margin-top:3px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--accent)}
+.note{color:var(--muted);font-size:.76rem;line-height:1.6;margin-top:14px}
+.note a{color:var(--accent)}
+@media (max-width:760px){
+  main{grid-template-columns:1fr;grid-template-rows:minmax(360px,62vh) auto}
+  aside{border-left:0;border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .search{margin-left:0;width:100%}
+  #search{flex:1;max-width:none}
+  body{height:auto}
+}
+.yr{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted)}
+#year{accent-color:var(--accent);width:9em}
+#yv{font-family:var(--num);color:var(--fg)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Tropical nights and insufficient rest from sleep in Japan, by secondary medical care area</h1>
+  <p>335 areas, fiscal years 2018–2023, 159.3 million health checkup responses (ages 40–74)</p>
+</header>
+<div class="controls">
+  <div class="chips" id="chips" role="group" aria-label="Indicator"></div>
+  <label class="yr" id="yrbox">Fiscal year <input id="year" type="range" min="2018" max="2023" step="1" value="2023" aria-label="Fiscal year"> <span id="yv">2023</span></label>
+  <div class="search">
+    <input id="search" list="names" placeholder="Find an area (Japanese name)" autocomplete="off" aria-label="Find an area">
+    <datalist id="names"></datalist>
+    <button id="reset" type="button">Whole country</button>
+  </div>
+</div>
+<main>
+  <div id="mapwrap">
+    <canvas id="map" aria-label="Map of Japanese secondary medical care areas colored by the selected indicator"></canvas>
+    <div id="status">Loading map data…</div>
+    <div id="tip" hidden></div>
+    <div id="legend"></div>
+  </div>
+  <aside id="info">
+    <h2>Select an area</h2>
+    <div class="sub">Hover over or tap the map to see the values.</div>
+    <div id="nat"></div>
+    <div class="note">
+      Tropical nights: days in July–September with a daily minimum temperature of 25 °C or higher, interpolated from JMA weather stations, corrected with 100 m land use and averaged over population points in each area. Insufficient rest from sleep: proportion answering “no” to “Do you get enough rest from sleep?” in specific health checkups (NDB Open Data), standardized to the national sex and age structure of fiscal year 2022. Change in 2023: tropical nights in 2023 minus the area’s 2018–2022 mean. Modeled difference: the difference in predicted reports of insufficient rest from sleep per 1,000 respondents when the 2023 tropical nights are replaced with that mean (aggregated binomial model). The values are area averages, not values for single homes or persons.<br>
+      Source: D. Matsushita, “Tropical nights and insufficient rest from sleep: a nationwide panel study of 335 secondary medical care areas in Japan, 2018–2023” (submitted). Data and code: <a href="https://github.com/m138/japan-hotnight-sleep" target="_blank" rel="noopener">github.com/m138/japan-hotnight-sleep</a>. Map lines delineate study areas and do not necessarily depict accepted national boundaries.
+    </div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const YRS=[2018,2019,2020,2021,2022,2023];
+const IND=[
+ {k:'tn',lab:'Tropical nights',long:'Tropical nights (days)',u:' days',b:[1,10,20,30,45],yr:true},
+ {k:'rest',lab:'Insufficient rest from sleep',long:'Insufficient rest from sleep (standardized)',u:'%',b:[31,33,35,37,39],yr:true},
+ {k:'dtn',lab:'Change in 2023',long:'Tropical nights, 2023 minus the 2018–2022 mean',u:' days',b:[1,5,10,15,20],sign:true},
+ {k:'per1000',lab:'Modeled difference in 2023',long:'Modeled difference in insufficient rest from sleep, 2023 (per 1,000 respondents)',u:'',b:[0.5,1,2,3,5],sign:true}
+];
+let cur=IND[0], yi=5, NAT=null, feats=[], hover=null, sel=null, transform=d3.zoomIdentity;
+const wrap=document.getElementById('mapwrap'), cv=document.getElementById('map'), ctx=cv.getContext('2d');
+const pick=document.createElement('canvas'), pctx=pick.getContext('2d',{willReadFrequently:true});
+const tip=document.getElementById('tip'), info=document.getElementById('info');
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let COLS=[]; const readCols=()=>{COLS=[0,1,2,3,4,5].map(i=>css('--c'+i));};
+const val=(p,d)=>d.yr?p[d.k][yi]:p[d.k];
+const fmt=(v,d)=>{const a=Math.abs(v);let s=d.k==='per1000'?a.toFixed(2):a.toFixed(1);return (v<0?'−':(d.sign&&v>0?'+':''))+s+d.u;};
+const binOf=(v,b)=>{let i=0;while(i<b.length&&v>=b[i])i++;return i;};
+const colOf=f=>{const i=binOf(val(f.properties,cur),cur.b);return COLS[i];};
+let W=0,H=0,DPR=1,proj,path,ppath;
+const yrbox=document.getElementById('yrbox'), year=document.getElementById('year'), yv=document.getElementById('yv');
+const setLong=()=>{IND[0].long='Tropical nights, FY'+year.value+' (days)';IND[1].long='Insufficient rest from sleep, FY'+year.value+' (standardized)';};
+year.oninput=()=>{yi=+year.value-2018;yv.textContent=year.value;setLong();legend();draw();showInfo(sel||hover);};
+setLong();
+
+const chips=document.getElementById('chips');
+IND.forEach(d=>{const b=document.createElement('button');b.className='chip';b.type='button';b.id='ind-'+d.k;b.textContent=d.lab;b.setAttribute('aria-pressed',d===cur);b.onclick=()=>{cur=d;[...chips.children].forEach(c=>c.setAttribute('aria-pressed',c===b));yrbox.hidden=!d.yr;legend();draw();showInfo(sel||hover);};chips.appendChild(b);});
+yrbox.hidden=!cur.yr;
+
+function legend(){
+  const b=cur.b, labs=[], f=v=>(v<0?'−':'')+Math.abs(v)+(cur.u==='%'?'%':'');
+  labs.push('< '+f(b[0]));
+  for(let i=0;i<b.length-1;i++)labs.push(f(b[i])+' to '+f(b[i+1]));
+  labs.push('≥ '+f(b[b.length-1]));
+  const cols=labs.map((l,i)=>COLS[i]);
+  document.getElementById('legend').innerHTML='<b>'+cur.long+'</b>'+labs.map((l,i)=>'<div class="row"><i style="background:'+cols[i]+'"></i>'+l+'</div>').join('');
+}
+function resize(){
+  const r=wrap.getBoundingClientRect(); W=r.width; H=r.height; DPR=window.devicePixelRatio||1;
+  cv.width=W*DPR; cv.height=H*DPR; pick.width=W; pick.height=H;
+  if(feats.length){proj=d3.geoMercator().fitExtent([[16,16],[W-16,H-16]],{type:'FeatureCollection',features:feats});draw();}
+}
+function draw(){
+  if(!proj)return;
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.translate(transform.x,transform.y); ctx.scale(transform.k,transform.k);
+  path=d3.geoPath(proj,ctx);
+  for(const f of feats){ctx.beginPath();path(f);ctx.fillStyle=colOf(f);ctx.fill();}
+  ctx.strokeStyle=css('--stroke'); ctx.lineWidth=0.5/transform.k;
+  if(transform.k>2){for(const f of feats){ctx.beginPath();path(f);ctx.stroke();}}
+  for(const f of [sel,hover]){if(!f)continue;ctx.beginPath();path(f);ctx.strokeStyle=css('--hl');ctx.lineWidth=2/transform.k;ctx.stroke();}
+  ctx.restore(); schedulePick();
+}
+let pickT=null;
+function schedulePick(){clearTimeout(pickT);pickT=setTimeout(drawPick,120);}
+function drawPick(){
+  pctx.setTransform(1,0,0,1,0,0);pctx.clearRect(0,0,W,H);pctx.save();pctx.translate(transform.x,transform.y);pctx.scale(transform.k,transform.k);
+  ppath=d3.geoPath(proj,pctx);
+  feats.forEach((f,i)=>{const id=i+1;pctx.beginPath();ppath(f);pctx.fillStyle='rgb('+(id&255)+','+((id>>8)&255)+',0)';pctx.fill();});
+  pctx.restore();
+}
+function featAt(x,y){
+  if(x<0||y<0||x>=W||y>=H)return null;
+  const d=pctx.getImageData(Math.floor(x),Math.floor(y),1,1).data; if(d[3]<255)return null;
+  return feats[d[0]+(d[1]<<8)-1]||null;
+}
+function barW(v,d){const m={tn:80,rest:50,dtn:30,per1000:8}[d.k];return Math.max(0,Math.min(100,v/m*100));}
+function table(p){
+  return '<table>'+IND.map(d=>{const v=val(p,d),n=val(NAT,d);
+    return '<tr class="'+(d===cur?'on':'')+'"><td>'+d.long+'<div class="bar"><span style="width:'+barW(v,d)+'%"></span></div></td><td>'+fmt(v,d)+'<br><span style="color:var(--muted);font-weight:400">Japan '+fmt(n,d)+'</span></td></tr>';}).join('')+'</table>';
+}
+function showInfo(f){
+  if(!f)return;
+  const p=f.properties;
+  info.querySelector('h2').textContent=p.n;
+  info.querySelector('.sub').textContent='Checkup responses '+p.resp.toLocaleString('en-US')+' (FY2023) · code '+p.c;
+  document.getElementById('nat').innerHTML=table(p);
+}
+function zoomTo(f){
+  const [[x0,y0],[x1,y1]]=d3.geoPath(proj).bounds(f);
+  const k=Math.min(60,0.8/Math.max((x1-x0)/W,(y1-y0)/H));
+  d3.select(cv).transition().duration(window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:700)
+    .call(zoom.transform,d3.zoomIdentity.translate(W/2,H/2).scale(k).translate(-(x0+x1)/2,-(y0+y1)/2));
+}
+const zoom=d3.zoom().scaleExtent([1,80]).on('start',e=>{if(e.sourceEvent&&e.sourceEvent.type!=='wheel')cv.classList.add('dragging');}).on('zoom',e=>{transform=e.transform;draw();}).on('end',()=>cv.classList.remove('dragging'));
+d3.select(cv).call(zoom);
+cv.addEventListener('pointermove',e=>{
+  const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,f=featAt(x,y);
+  if(f!==hover){hover=f;draw();if(!sel)showInfo(f);}
+  if(f&&e.pointerType==='mouse'){tip.hidden=false;tip.textContent=f.properties.n+': '+fmt(val(f.properties,cur),cur);
+    const tx=Math.min(x+14,W-tip.offsetWidth-6),ty=y+16>H-30?y-30:y+16;tip.style.left=tx+'px';tip.style.top=ty+'px';}
+  else tip.hidden=true;
+});
+cv.addEventListener('pointerleave',()=>{hover=null;tip.hidden=true;draw();});
+cv.addEventListener('click',e=>{const r=cv.getBoundingClientRect();const f=featAt(e.clientX-r.left,e.clientY-r.top);sel=f;showInfo(f);draw();});
+document.getElementById('reset').onclick=()=>{sel=null;d3.select(cv).transition().duration(500).call(zoom.transform,d3.zoomIdentity);};
+const search=document.getElementById('search');
+search.addEventListener('change',()=>{const q=search.value.trim();const f=feats.find(f=>f.properties.n===q)||feats.find(f=>q&&f.properties.n.includes(q));if(f){sel=f;showInfo(f);zoomTo(f);}});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readCols();legend();draw();});
+new MutationObserver(()=>{readCols();legend();draw();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new ResizeObserver(resize).observe(wrap);
+
+readCols(); legend();
+fetch('areas.geojson').then(r=>{if(!r.ok)throw new Error(r.status);return r.json();}).then(gj=>{
+  feats=gj.features; NAT=gj.national; document.getElementById('status').hidden=true;
+  document.getElementById('names').innerHTML=feats.map(f=>'<option value="'+f.properties.n+'">').join('');
+  resize();
+  info.querySelector('h2').textContent='Japan';
+  document.getElementById('nat').innerHTML=table(NAT).replace(/<br><span[^>]*>Japan [^<]*<\/span>/g,'');
+}).catch(e=>{document.getElementById('status').textContent='Could not load the map data ('+e.message+'). Please reload the page.';});
+</script>
+</body>
+</html>
