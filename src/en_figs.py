@@ -16,18 +16,20 @@ D=pd.read_pickle('hn/panel_v5_D.pkl'); D['tn25']=D.tn10u*10
 which=sys.argv[1:] or ['1','2','3','4','s']
 if '1' in which:
     A=pd.read_csv('hn/area_hotnight_uhi.csv',dtype={'code':str}); g=okinawa(gpd.read_file(GPKG).merge(A,on='code'))
-    fig=plt.figure(figsize=(12,5.2)); gs=fig.add_gridspec(1,3,width_ratios=[1,1,0.85],wspace=0.08); vmax=60; cmap=plt.get_cmap('OrRd')
+    fig=plt.figure(figsize=(12,5.2)); gs=fig.add_gridspec(1,3,width_ratios=[1,1,0.85],wspace=0.08); vmax=60; cmap=plt.get_cmap('OrRd'); maps=[]
     for i,yr in enumerate([2021,2023]):
         ax=fig.add_subplot(gs[0,i]); g.plot(column=f'tn25_u_{yr}',ax=ax,cmap=cmap,vmin=0,vmax=vmax,edgecolor='white',linewidth=0.15)
-        frame(ax); ax.set_title(f'{"ab"[i]}   {yr}, July–September',loc='left',fontsize=11,weight='bold')
-    sm_=plt.cm.ScalarMappable(cmap=cmap,norm=plt.Normalize(0,vmax)); cax=fig.add_axes([0.14,0.08,0.4,0.025])
-    cb=fig.colorbar(sm_,cax=cax,orientation='horizontal',extend='max'); cb.set_label('Tropical nights (days; population-weighted by area, land-use corrected)',fontsize=9)
+        frame(ax); maps.append((ax,f'{"ab"[i]}   {yr}, July–September'))
+    sm_=plt.cm.ScalarMappable(cmap=cmap,norm=plt.Normalize(0,vmax)); cax=fig.add_axes([0.14,0.13,0.4,0.025])
+    cb=fig.colorbar(sm_,cax=cax,orientation='horizontal',extend='max'); cb.set_label('Tropical nights (days; population-weighted within each area, land-use corrected)',fontsize=9)
     ax=fig.add_subplot(gs[0,2]); ax.set_position([0.70,0.2,0.27,0.62])
     m=D.groupby('year').apply(lambda d:np.average(d.tn25,weights=d.tot)); print(m.round(1).to_dict())
     ax.bar(m.index,m.values,color=C2,width=0.6)
     for x,v in m.items(): ax.text(x,v+0.6,f'{v:.1f}',ha='center',fontsize=8.5,color=INK)
     ax.set_xticks(m.index,[f'{y}' for y in m.index],fontsize=8.5); ax.set_ylabel('Tropical nights (days, national mean)'); ax.set_ylim(0,38)
-    ax.set_title('c   National mean by year',loc='left',fontsize=11,weight='bold')
+    maps.append((ax,'c   National mean by year')); fig.canvas.draw()
+    ytop=max(a.get_position().y1 for a,_ in maps)+0.03
+    for a,t in maps: fig.text(a.get_position().x0,ytop,t,fontsize=11,weight='bold',va='bottom')
     ax.text(0,-0.2,'Area values weighted by the number of checkup responses',transform=ax.transAxes,fontsize=8,color=MUTE)
     save(fig,'fig1_tropical_nights_map')
 if '2' in which:
@@ -42,7 +44,7 @@ if '2' in which:
         ax.set_xlabel('Estimated tropical nights (days)'); ax.set_ylabel('Observed tropical nights at station (days)')
         ax.text(0.04,0.96,f'R² {r2:.2f}\nBias {e.mean():+.1f} days\nRMSE {np.sqrt((e**2).mean()):.1f} days'.replace('-','−'),transform=ax.transAxes,va='top',fontsize=9,color=INK)
         ax.set_title(t,loc='left',fontsize=10.5,weight='bold')
-    lvl(axs[0],'p_idw','a   Interpolation only'); lvl(axs[1],'p_final_noc','b   Land-use correction (main)')
+    lvl(axs[0],'p_idw','a   Interpolation only\n '); lvl(axs[1],'p_final_noc','b   Land-use correction (main)\n ')
     axs[0].legend(loc='lower right',frameon=False,fontsize=8.5,markerscale=2)
     d=P.copy(); d['py']=d.pref.astype(str)+'_'+d.fy.astype(str)
     for c in ['tn25','p_idw','p_final_noc']:
@@ -70,7 +72,7 @@ if '3' in which:
      ('Other model and exposure specifications',None),('Aggregated binomial model by sex and age',(1.0109,1.0036,1.0182)),('Exposure without land-use correction',(1.0096,1.0023,1.0170))]
     fig,ax=plt.subplots(figsize=(8.6,8.4)); y=0; yt=[]; yl=[]
     for lab,v in rows[::-1]:
-        if v is None: ax.text(0.975,y,lab,fontsize=9.5,va='center',gid='hd',color=INK,weight='bold')
+        if v is None: ax.text(0.975,y,lab,fontsize=10.5,va='center',gid='hd',color=INK,weight='bold')
         else:
             main='(main)' in lab; c=C2 if main else C1
             ax.plot([v[1],v[2]],[y,y],color=c,lw=2); ax.plot(v[0],y,'o',color=c,ms=7 if main else 6,mec='white',mew=1)
